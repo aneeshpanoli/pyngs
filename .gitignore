@@ -1,0 +1,8 @@
+venv
+build
+fastqp.egg-info
+/#*shell*#
+/*shell*
+/.DS_Store
+*.DS_Store
+*/__pycache__/
