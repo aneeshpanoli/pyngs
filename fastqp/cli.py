@@ -26,7 +26,7 @@ class Bunch(object):
         self.__dict__.update(adict)
 
 
-def run(file_name, quiet=False, binsize=None, nreads=2000000, count_duplicates=False,
+def get_metrics(file_name, quiet=False, binsize=None, nreads=2000000, count_duplicates=False,
             leftlimit=1, rightlimit=-1, kmer=5, base_probs='0.25,0.25,0.25,0.25,0.1',
             text='-', output='fastqp_figures', median_qual_r=30, fig_out=False):
     """ read FASTQ or SAM and tabulate basic metrics
@@ -370,7 +370,7 @@ def run(file_name, quiet=False, binsize=None, nreads=2000000, count_duplicates=F
             'cycle_mismatch':cycle_mismatch}
 
 
-def get_metrics(fname):
+def main(fname):
     parser = argparse.ArgumentParser(
         prog='fastqp', description="simple NGS read quality assessment using Python")
     parser.add_argument(
