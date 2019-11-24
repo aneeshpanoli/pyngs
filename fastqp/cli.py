@@ -9,7 +9,7 @@ import math
 import time
 import shlex
 from fastqp import FastqReader, padbases, percentile, mean, bam_read_count, gc, window
-from fastqp.plots import qualplot, qualdist, qualmap, nucplot, depthplot, gcplot, gcdist, kmerplot, mismatchplot, adaptermerplot
+from fastqp.plots import  get_median_qual, qualplot, qualdist, qualmap, nucplot, depthplot, gcplot, gcdist, kmerplot, mismatchplot, adaptermerplot
 from fastqp.adapters import all_adapter_sequences
 from collections import defaultdict
 from simplesam import Reader, Sam
@@ -17,6 +17,7 @@ from subprocess import Popen, PIPE
 from scipy import stats
 from operator import mul
 from six.moves import reduce
+from zipfile import ZipFile
 
 
 class Bunch(object):
@@ -27,7 +28,7 @@ class Bunch(object):
 
 def run(file_name, quiet=False, binsize=None, nreads=2000000, count_duplicates=False,
             leftlimit=1, rightlimit=-1, kmer=5, base_probs='0.25,0.25,0.25,0.25,0.1',
-            text='-', output='fastqp_figures', median_qual_r=30):
+            text='-', output='fastqp_figures', median_qual_r=30, fig_out=False):
     """ read FASTQ or SAM and tabulate basic metrics
     arguments is a dictionary so that we can call this as a function """
     input = argparse.FileType('r')(file_name)
@@ -328,29 +329,31 @@ def run(file_name, quiet=False, binsize=None, nreads=2000000, count_duplicates=F
     if count_duplicates:
         text.write("{row}\t{column}\t{pos}\t{value:n}\n".format(
             row=sample_name, column='duplicate', pos='None', value=duplicates / act_nlines))
+    bad_kmer_field =  [fields[0] for fields in bad_kmers]
+    median_qual = get_median_qual(cycle_qual.values())
 
-    from zipfile import ZipFile
-    with ZipFile(output + '.zip', mode='w') as zip_archive:
-        fig_kw = {'figsize': (8, 6)}
-        qualplot(positions, quantiles, zip_archive, fig_kw)
-        median_qual = qualdist(cycle_qual.values(), zip_archive, fig_kw)
-        qualmap(cycle_qual, zip_archive, fig_kw)
-        depthplot(read_len, zip_archive, fig_kw)
-        gcplot(positions, pos_gc, zip_archive, fig_kw)
-        gcdist(cycle_gc, zip_archive, fig_kw)
-        nucplot(positions, bases, cycle_nuc, zip_archive, fig_kw)
-        kmerplot(positions, cycle_kmers, zip_archive, [fields[0] for fields in bad_kmers], fig_kw)
-        adaptermerplot(positions, cycle_kmers,
-                       adapter_kmers, zip_archive, fig_kw)
-        if isinstance(infile, Reader):
-            mismatchplot(positions, cycle_mismatch, zip_archive, fig_kw)
+    if fig_out:
+        with ZipFile(output + '.zip', mode='w') as zip_archive:
+            fig_kw = {'figsize': (8, 6)}
+            qualplot(positions, quantiles, zip_archive, fig_kw)
+            qualdist(cycle_qual.values(), zip_archive, fig_kw)
+            qualmap(cycle_qual, zip_archive, fig_kw)
+            depthplot(read_len, zip_archive, fig_kw)
+            gcplot(positions, pos_gc, zip_archive, fig_kw)
+            gcdist(cycle_gc, zip_archive, fig_kw)
+            nucplot(positions, bases, cycle_nuc, zip_archive, fig_kw)
+            kmerplot(positions, cycle_kmers, zip_archive,bad_kmer_field, fig_kw)
+            adaptermerplot(positions, cycle_kmers,
+                           adapter_kmers, zip_archive, fig_kw)
+            if isinstance(infile, Reader):
+                mismatchplot(positions, cycle_mismatch, zip_archive, fig_kw)
     time_finish = time.time()
     elapsed = time_finish - time_start
     if not quiet:
-        sys.stderr.write("There were {counts:,} reads in the file. Analysis finished in {sec}.\n".format(counts=act_nlines,
-                                                                                                         sec=time.strftime('%H:%M:%S',
-                                                                                                                           time.gmtime(elapsed))
-                                                                                                         ))
+        sys.stderr.write("There were {counts:,} reads in the file. Analysis \
+                        finished in {sec}.\n".format(counts=act_nlines,
+                        sec=time.strftime('%H:%M:%S',time.gmtime(elapsed))))
+
         if len(bad_kmers) > 0:
             for k_mer in bad_kmers:
                 sys.stderr.write(
@@ -359,8 +362,15 @@ def run(file_name, quiet=False, binsize=None, nreads=2000000, count_duplicates=F
             sys.stderr.write(
                 "QualityWarning: median base quality score is %s.\n" % median_qual)
 
+    ### return metrics - this can be used to create plots
+    return {'positions':positions, 'quantiles':quantiles, 'median_qual':median_qual,
+            'cycle_qual':cycle_qual, 'read_len':read_len, 'pos_gc':pos_gc,
+            'cycle_gc':cycle_gc, 'cycle_nuc':cycle_nuc, 'bases':bases, 'cycle_kmers':cycle_kmers,
+            'bad_kmer_field':bad_kmer_field, 'adapter_kmers':adapter_kmers, 'infile':infile,
+            'cycle_mismatch':cycle_mismatch}
 
-def main(fname):
+
+def get_metrics(fname):
     parser = argparse.ArgumentParser(
         prog='fastqp', description="simple NGS read quality assessment using Python")
     parser.add_argument(
@@ -407,4 +417,4 @@ def main(fname):
 
 if __name__ == "__main__":
     fname = '/home/aneesh/coursera/fastq-jupyter/sra/ERR3653426.fastq'
-    main(fname)
+    get_metrics(fname)

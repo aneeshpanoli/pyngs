@@ -337,9 +337,15 @@ def qualdist(qualities, filename, fig_kw):
     ax.set_xlabel('Phred score')
     ax.set_ylabel('Cumulative sum')
     add_figure_to_archive(fig, filename, 'quality_score_distribution.png')
+
+
+def get_median_qual(qualities):
+    values = map(Counter, qualities)
+    counts = Counter()
+    for value in values:
+        counts += value
     return np.median(
         tuple(itertools.chain(*([n] * m for n, m in counts.items()))))
-
 
 def qualmap(qualities, filename, fig_kw):
     fig = plt.figure(**fig_kw)
