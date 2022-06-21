@@ -2,7 +2,7 @@ bitarray==1.1.0
 cycler==0.10.0
 kiwisolver==1.1.0
 matplotlib==3.1.2
-numpy==1.17.4
+numpy==1.22.0
 ordereddict==1.1
 -e git+http://github.com/jaybaird/python-bloomfilter.git@2bbe01ad49965bf759e31781e6820408068862ac#egg=pybloom
 pyparsing==2.4.5
