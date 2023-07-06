@@ -7,6 +7,6 @@ ordereddict==1.1
 -e git+http://github.com/jaybaird/python-bloomfilter.git@2bbe01ad49965bf759e31781e6820408068862ac#egg=pybloom
 pyparsing==2.4.5
 python-dateutil==2.8.1
-scipy==1.3.2
+scipy==1.10.0
 simplesam==0.1.3.1
 six==1.13.0
